@@ -20,27 +20,22 @@ wheels/
 .installed.cfg
 *.egg
 
-# Environment
+# Virtual Environment
 .env
 .venv
 env/
 venv/
 ENV/
-env.bak/
-venv.bak/
 
 # IDE
 .idea/
 .vscode/
 *.swp
 *.swo
-.DS_Store
 
 # Logs
 *.log
 
 # Local development
-.replit
-.breakpoints
-poetry.lock
-replit.nix
+.DS_Store
+Thumbs.db
