@@ -2,14 +2,13 @@ import asyncio
 import logging
 import signal
 import os
-import ssl
 from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.utils.token import validate_token
 from aiogram.client.default import DefaultBotProperties
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
-from aiohttp import web, ClientSession, TCPConnector
+from aiohttp import web
 from aiohttp.web import AppRunner, TCPSite
 
 from config.settings import BOT_TOKEN, WEBHOOK_URL, WEBHOOK_PATH
@@ -74,15 +73,10 @@ async def main():
         logging.error("Invalid bot token!")
         return
 
-    # Create aiohttp session with custom connector
-    connector = TCPConnector(ssl=False)
-    session = ClientSession(connector=connector)
-
     # Initialize bot and dispatcher
     bot = Bot(
         token=BOT_TOKEN,
-        default=DefaultBotProperties(parse_mode=ParseMode.HTML),
-        session=session
+        default=DefaultBotProperties(parse_mode=ParseMode.HTML)
     )
     dp = Dispatcher(storage=MemoryStorage())
 
@@ -109,17 +103,12 @@ async def main():
     site = TCPSite(
         runner,
         host='0.0.0.0',
-        port=int(os.environ.get('PORT', 8080)),
-        ssl_context=None  # Отключаем SSL для Railway
+        port=int(os.environ.get('PORT', 8080))
     )
     await site.start()
 
     # Run forever
-    try:
-        await asyncio.Event().wait()
-    finally:
-        await session.close()
-        await connector.close()
+    await asyncio.Event().wait()
 
 if __name__ == "__main__":
     try:
