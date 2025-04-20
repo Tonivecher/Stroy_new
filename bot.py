@@ -24,6 +24,10 @@ logging.basicConfig(
 # Check if running on Railway
 IS_RAILWAY = os.environ.get('RAILWAY_ENVIRONMENT') is not None
 
+async def health_check(request):
+    """Health check endpoint for Railway."""
+    return web.Response(text='OK', status=200)
+
 async def on_startup(bot: Bot):
     """Actions to perform on bot startup."""
     logging.info("Bot is starting up...")
@@ -88,6 +92,10 @@ async def main():
     if IS_RAILWAY and WEBHOOK_URL:
         # Create aiohttp application for webhook
         app = web.Application()
+        
+        # Add health check endpoint
+        app.router.add_get('/health', health_check)
+        
         webhook_requests_handler = SimpleRequestHandler(
             dispatcher=dp,
             bot=bot,
@@ -104,6 +112,7 @@ async def main():
             port=int(os.environ.get('PORT', 8080))
         )
         await site.start()
+        logging.info(f"Web server started on port {os.environ.get('PORT', 8080)}")
 
         # Run forever
         await asyncio.Event().wait()
