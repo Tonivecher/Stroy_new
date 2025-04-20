@@ -1,63 +1,44 @@
-# 🏗️ Строительный Помощник Бот
+# Telegram Bot
 
-Telegram бот для помощи в строительных расчетах и ремонте.
+A Telegram bot built with aiogram 3.x.
 
-## 🚀 Возможности
+## Features
 
-- Расчет площади помещений
-- Подбор материалов
-- Расчет стоимости ремонта
-- Создание отчетов
+- Feature 1
+- Feature 2
+- Feature 3
 
-## 🛠 Технологии
+## Setup
 
-- Python 3.9+
-- aiogram 3.3.0
-- python-dotenv
+1. Clone the repository
+2. Create a virtual environment:
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   ```
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. Create a `.env` file and add your bot token:
+   ```
+   BOT_TOKEN=your_bot_token_here
+   ADMIN_IDS=your_admin_ids_here
+   ```
+5. Run the bot:
+   ```bash
+   python bot.py
+   ```
 
-## 📋 Требования
+## Project Structure
 
-- Python 3.9 или выше
-- pip (Python package installer)
-
-## 🔧 Установка
-
-1. Клонируйте репозиторий:
-```bash
-git clone https://github.com/your-username/construction-helper-bot.git
-cd construction-helper-bot
 ```
-
-2. Создайте виртуальное окружение и активируйте его:
-```bash
-python -m venv venv
-source venv/bin/activate  # для Linux/macOS
-# или
-venv\Scripts\activate  # для Windows
-```
-
-3. Установите зависимости:
-```bash
-pip install -r requirements.txt
-```
-
-4. Создайте файл .env и добавьте в него токен бота:
-```
-BOT_TOKEN=your_telegram_bot_token
-```
-
-## 🚀 Запуск
-
-```bash
-python bot.py
-```
-
-## 📝 Лицензия
-
-MIT License
-
-## 👤 Автор
-
-Ваше имя
-- GitHub: [@your-username](https://github.com/your-username)
-- Telegram: [@your_telegram]
+├── config/         # Configuration files
+├── data/          # Data storage
+├── handlers/      # Bot handlers
+├── keyboards/     # Keyboard layouts
+├── utils/         # Utility functions
+├── .env           # Environment variables
+├── bot.py         # Main bot file
+└── requirements.txt
+``` 

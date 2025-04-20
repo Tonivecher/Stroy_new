@@ -33,9 +33,6 @@ ENV/
 *.swp
 *.swo
 
-# Logs
-*.log
-
-# Local development
+# OS
 .DS_Store
 Thumbs.db
