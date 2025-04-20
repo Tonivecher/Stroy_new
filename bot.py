@@ -9,7 +9,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.utils.token import validate_token
 from aiogram.client.default import DefaultBotProperties
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
-from aiohttp import web, TCPConnector
+from aiohttp import web, ClientSession, TCPConnector
 from aiohttp.web import AppRunner, TCPSite
 
 from config.settings import BOT_TOKEN, WEBHOOK_URL, WEBHOOK_PATH
@@ -74,11 +74,15 @@ async def main():
         logging.error("Invalid bot token!")
         return
 
+    # Create aiohttp session with custom connector
+    connector = TCPConnector(ssl=False)
+    session = ClientSession(connector=connector)
+
     # Initialize bot and dispatcher
     bot = Bot(
         token=BOT_TOKEN,
         default=DefaultBotProperties(parse_mode=ParseMode.HTML),
-        session=TCPConnector(ssl=False)  # Отключаем SSL для Railway
+        session=session
     )
     dp = Dispatcher(storage=MemoryStorage())
 
@@ -111,7 +115,11 @@ async def main():
     await site.start()
 
     # Run forever
-    await asyncio.Event().wait()
+    try:
+        await asyncio.Event().wait()
+    finally:
+        await session.close()
+        await connector.close()
 
 if __name__ == "__main__":
     try:
