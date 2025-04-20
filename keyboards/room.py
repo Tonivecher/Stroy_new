@@ -1,12 +1,12 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
-def get_area_keyboard() -> ReplyKeyboardMarkup:
-    """Get the area calculation keyboard layout."""
+def get_room_keyboard() -> ReplyKeyboardMarkup:
+    """Get the room management keyboard layout."""
     return ReplyKeyboardMarkup(
         keyboard=[
             [
-                KeyboardButton(text="🏠 Помещение"),
-                KeyboardButton(text="📐 Проемы")
+                KeyboardButton(text="➕ Добавить комнату"),
+                KeyboardButton(text="❌ Удалить комнату")
             ],
             [
                 KeyboardButton(text="⬅️ Назад"),

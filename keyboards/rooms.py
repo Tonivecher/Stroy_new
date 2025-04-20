@@ -1,12 +1,18 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
-def get_rooms_keyboard():
-    """Get keyboard for room management."""
-    keyboard = [
-        [KeyboardButton(text="🏠 Добавить помещение")],
-        [KeyboardButton(text="📋 Список помещений")],
-        [KeyboardButton(text="✏️ Редактировать")],
-        [KeyboardButton(text="❌ Удалить")],
-        [KeyboardButton(text="🏠 Главное меню")]
-    ]
-    return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True) 
+def get_room_keyboard() -> ReplyKeyboardMarkup:
+    """Get the room management keyboard layout."""
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [
+                KeyboardButton(text="🏠 Помещение"),
+                KeyboardButton(text="📐 Проемы")
+            ],
+            [
+                KeyboardButton(text="⬅️ Назад"),
+                KeyboardButton(text="🏠 Главное меню")
+            ]
+        ],
+        resize_keyboard=True,
+        one_time_keyboard=False
+    ) 

@@ -1,12 +1,22 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
-def get_openings_keyboard():
-    """Get keyboard for openings management."""
-    keyboard = [
-        [KeyboardButton(text="🚪 Добавить проем")],
-        [KeyboardButton(text="📋 Список проемов")],
-        [KeyboardButton(text="✏️ Редактировать")],
-        [KeyboardButton(text="❌ Удалить")],
-        [KeyboardButton(text="🏠 Главное меню")]
-    ]
-    return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True) 
+def get_openings_keyboard() -> ReplyKeyboardMarkup:
+    """Get the openings management keyboard layout."""
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [
+                KeyboardButton(text="🚪 Дверь"),
+                KeyboardButton(text="🪟 Окно")
+            ],
+            [
+                KeyboardButton(text="📋 Список проемов"),
+                KeyboardButton(text="✏️ Редактировать")
+            ],
+            [
+                KeyboardButton(text="⬅️ Назад"),
+                KeyboardButton(text="🏠 Главное меню")
+            ]
+        ],
+        resize_keyboard=True,
+        one_time_keyboard=False
+    ) 
