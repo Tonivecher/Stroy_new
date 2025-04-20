@@ -27,8 +27,8 @@ IS_RAILWAY = os.environ.get('RAILWAY_ENVIRONMENT') is not None
 async def on_startup(bot: Bot):
     """Actions to perform on bot startup."""
     logging.info("Bot is starting up...")
-    if IS_RAILWAY:
-        logging.info("Running on Railway environment")
+    if IS_RAILWAY and WEBHOOK_URL:
+        logging.info("Running on Railway environment with webhook")
         logging.info(f"Setting webhook to: {WEBHOOK_URL}")
         try:
             # Set webhook with retry
@@ -50,13 +50,13 @@ async def on_startup(bot: Bot):
             logging.error(f"Error setting webhook: {e}")
             raise
     else:
-        logging.info("Not running on Railway, exiting...")
-        os._exit(0)
+        logging.info("Running in polling mode")
+        await bot.delete_webhook(drop_pending_updates=True)
 
 async def on_shutdown(bot: Bot):
     """Actions to perform on bot shutdown."""
     logging.info("Bot is shutting down...")
-    if IS_RAILWAY:
+    if IS_RAILWAY and WEBHOOK_URL:
         try:
             await bot.delete_webhook()
             logging.info("Webhook deleted")
@@ -65,10 +65,6 @@ async def on_shutdown(bot: Bot):
 
 async def main():
     """Main function to start the bot."""
-    if not IS_RAILWAY:
-        logging.info("Not running on Railway, exiting...")
-        return
-
     # Validate token
     if not validate_token(BOT_TOKEN):
         logging.error("Invalid bot token!")
@@ -89,27 +85,31 @@ async def main():
     dp.startup.register(on_startup)
     dp.shutdown.register(on_shutdown)
 
-    # Create aiohttp application
-    app = web.Application()
-    webhook_requests_handler = SimpleRequestHandler(
-        dispatcher=dp,
-        bot=bot,
-    )
-    webhook_requests_handler.register(app, path=WEBHOOK_PATH)
-    setup_application(app, dp, bot=bot)
+    if IS_RAILWAY and WEBHOOK_URL:
+        # Create aiohttp application for webhook
+        app = web.Application()
+        webhook_requests_handler = SimpleRequestHandler(
+            dispatcher=dp,
+            bot=bot,
+        )
+        webhook_requests_handler.register(app, path=WEBHOOK_PATH)
+        setup_application(app, dp, bot=bot)
 
-    # Start web server
-    runner = AppRunner(app)
-    await runner.setup()
-    site = TCPSite(
-        runner,
-        host='0.0.0.0',
-        port=int(os.environ.get('PORT', 8080))
-    )
-    await site.start()
+        # Start web server
+        runner = AppRunner(app)
+        await runner.setup()
+        site = TCPSite(
+            runner,
+            host='0.0.0.0',
+            port=int(os.environ.get('PORT', 8080))
+        )
+        await site.start()
 
-    # Run forever
-    await asyncio.Event().wait()
+        # Run forever
+        await asyncio.Event().wait()
+    else:
+        # Start polling
+        await dp.start_polling(bot)
 
 if __name__ == "__main__":
     try:

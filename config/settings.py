@@ -12,14 +12,25 @@ ADMIN_IDS = [int(id) for id in os.getenv("ADMIN_IDS", "").split(",") if id]
 # Webhook settings
 WEBHOOK_PATH = '/webhook'
 RAILWAY_STATIC_URL = os.getenv('RAILWAY_STATIC_URL', '')
-if not RAILWAY_STATIC_URL:
-    raise ValueError("RAILWAY_STATIC_URL environment variable is not set")
+RAILWAY_PUBLIC_DOMAIN = os.getenv('RAILWAY_PUBLIC_DOMAIN', '')
 
-# Ensure URL ends with a slash
-if not RAILWAY_STATIC_URL.endswith('/'):
-    RAILWAY_STATIC_URL += '/'
+# Get the base URL from available environment variables
+if RAILWAY_STATIC_URL:
+    base_url = RAILWAY_STATIC_URL
+elif RAILWAY_PUBLIC_DOMAIN:
+    base_url = f"https://{RAILWAY_PUBLIC_DOMAIN}"
+else:
+    # If no URL is available, use polling mode
+    base_url = None
 
-WEBHOOK_URL = urljoin(RAILWAY_STATIC_URL, WEBHOOK_PATH.lstrip('/'))
+# Configure webhook URL if base URL is available
+if base_url:
+    # Ensure URL ends with a slash
+    if not base_url.endswith('/'):
+        base_url += '/'
+    WEBHOOK_URL = urljoin(base_url, WEBHOOK_PATH.lstrip('/'))
+else:
+    WEBHOOK_URL = None
 
 # Material categories
 MATERIAL_CATEGORIES = {
