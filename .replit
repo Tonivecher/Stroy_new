@@ -5,6 +5,7 @@ channel = "stable-24_05"
 
 [workflows]
 runButton = "Telegram Bot"
+alwaysOn = true
 
 [[workflows.workflow]]
 name = "Project"
@@ -21,13 +22,16 @@ author = "agent"
 
 [workflows.workflow.metadata]
 agentRequireRestartOnSave = false
+restartOnCrash = true
+restartOnFileChange = true
 
 [[workflows.workflow.tasks]]
 task = "packager.installForAll"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "python main.py"
+args = "python3 bot.py"
 
 [deployment]
-run = ["sh", "-c", "python main.py"]
+run = ["sh", "-c", "python3 bot.py"]
+alwaysOn = true

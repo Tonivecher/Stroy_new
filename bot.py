@@ -6,6 +6,7 @@ from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.utils.token import validate_token
 from aiogram.client.default import DefaultBotProperties
+from keep_alive import keep_alive
 
 from config.settings import BOT_TOKEN
 from handlers.base import router as base_router
@@ -52,6 +53,9 @@ async def main():
     global bot, dp
     
     try:
+        # Start keep-alive server
+        keep_alive()
+        
         # Set up signal handlers
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
