@@ -3,12 +3,14 @@ from aiogram.filters import Command, CommandStart
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
+import logging
 
 from keyboards.main import get_main_keyboard, get_estimate_keyboard
 from keyboards.materials import get_material_keyboard, get_material_categories, get_material_units
 from data.materials import save_material, get_user_materials, format_material_info
 from states import MaterialState
 
+logger = logging.getLogger(__name__)
 router = Router()
 
 class RoomState(StatesGroup):
@@ -26,62 +28,78 @@ class MaterialCalculationState(StatesGroup):
 @router.message(CommandStart())
 @router.message(Command("start"))
 async def handle_start(message: Message):
-    await message.answer(
-        "Добро пожаловать! Я помогу вам рассчитать смету ремонта. "
-        "Выберите действие:",
-        reply_markup=get_main_keyboard()
-    )
+    try:
+        await message.answer(
+            "Добро пожаловать! Я помогу вам рассчитать смету ремонта. "
+            "Выберите действие:",
+            reply_markup=get_main_keyboard()
+        )
+    except Exception as e:
+        logger.error(f"Error in handle_start: {e}")
+        await message.answer("Произошла ошибка. Пожалуйста, попробуйте позже.")
 
 @router.message(Command("help"))
 async def cmd_help(message: Message):
     """Handle /help command."""
-    await message.answer(
-        "🔍 <b>Как пользоваться ботом:</b>\n\n"
-        "1. Нажмите 'Рассчитать площадь'\n"
-        "2. Введите название помещения\n"
-        "3. Укажите длину помещения\n"
-        "4. Укажите ширину помещения\n"
-        "5. Получите результат расчета\n\n"
-        "Все сохраненные помещения будут доступны в разделе 'Мои помещения'.\n"
-        "Используйте кнопки меню для навигации.",
-        reply_markup=get_main_keyboard()
-    )
+    try:
+        await message.answer(
+            "🔍 <b>Как пользоваться ботом:</b>\n\n"
+            "1. Нажмите 'Рассчитать площадь'\n"
+            "2. Введите название помещения\n"
+            "3. Укажите длину помещения\n"
+            "4. Укажите ширину помещения\n"
+            "5. Получите результат расчета\n\n"
+            "Все сохраненные помещения будут доступны в разделе 'Мои помещения'.\n"
+            "Используйте кнопки меню для навигации.",
+            reply_markup=get_main_keyboard()
+        )
+    except Exception as e:
+        logger.error(f"Error in cmd_help: {e}")
+        await message.answer("Произошла ошибка. Пожалуйста, попробуйте позже.")
 
 @router.message(F.text == "🔲 Рассчитать площадь")
 async def handle_calculate_area(message: Message, state: FSMContext):
     """Handle area calculation request."""
-    keyboard = ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text="🏠 Помещение")],
-            [KeyboardButton(text="🏠 Главное меню")]
-        ],
-        resize_keyboard=True,
-        one_time_keyboard=False
-    )
-    await message.answer(
-        "Выберите, что хотите рассчитать:",
-        reply_markup=keyboard
-    )
+    try:
+        keyboard = ReplyKeyboardMarkup(
+            keyboard=[
+                [KeyboardButton(text="🏠 Помещение")],
+                [KeyboardButton(text="🏠 Главное меню")]
+            ],
+            resize_keyboard=True,
+            one_time_keyboard=False
+        )
+        await message.answer(
+            "Выберите, что хотите рассчитать:",
+            reply_markup=keyboard
+        )
+    except Exception as e:
+        logger.error(f"Error in handle_calculate_area: {e}")
+        await message.answer("Произошла ошибка. Пожалуйста, попробуйте позже.")
 
 @router.message(F.text == "🏠 Мои помещения")
 async def handle_my_rooms(message: Message):
     """Handle my rooms request."""
-    from data.rooms import get_user_rooms, format_room_info
-    
-    rooms = get_user_rooms(message.from_user.id)
-    if not rooms:
-        await message.answer(
-            "У вас пока нет сохраненных помещений.\n"
-            "Нажмите '🔲 Рассчитать площадь' чтобы добавить помещение.",
-            reply_markup=get_main_keyboard()
-        )
-        return
-    
-    response_text = "📋 Ваши помещения:\n\n"
-    for room in rooms:
-        response_text += format_room_info(room) + "\n"
-    
-    await message.answer(response_text, reply_markup=get_main_keyboard())
+    try:
+        from data.rooms import get_user_rooms, format_room_info
+        
+        rooms = get_user_rooms(message.from_user.id)
+        if not rooms:
+            await message.answer(
+                "У вас пока нет сохраненных помещений.\n"
+                "Нажмите '🔲 Рассчитать площадь' чтобы добавить помещение.",
+                reply_markup=get_main_keyboard()
+            )
+            return
+        
+        response_text = "📋 Ваши помещения:\n\n"
+        for room in rooms:
+            response_text += format_room_info(room) + "\n"
+        
+        await message.answer(response_text, reply_markup=get_main_keyboard())
+    except Exception as e:
+        logger.error(f"Error in handle_my_rooms: {e}")
+        await message.answer("Произошла ошибка при получении списка помещений. Пожалуйста, попробуйте позже.")
 
 @router.message(F.text == "📦 Материалы")
 async def handle_materials(message: Message):
@@ -178,57 +196,91 @@ async def handle_main_menu(message: Message):
 @router.message(F.text == "🏠 Помещение")
 async def handle_add_room(message: Message, state: FSMContext):
     """Handle add room request."""
-    await state.set_state(RoomState.waiting_for_name)
-    await message.answer(
-        "Введите название помещения:",
-        reply_markup=ReplyKeyboardMarkup(
-            keyboard=[[KeyboardButton(text="🏠 Главное меню")]],
-            resize_keyboard=True
+    try:
+        await state.set_state(RoomState.waiting_for_name)
+        await message.answer(
+            "Введите название помещения:",
+            reply_markup=ReplyKeyboardMarkup(
+                keyboard=[[KeyboardButton(text="🏠 Главное меню")]],
+                resize_keyboard=True
+            )
         )
-    )
+    except Exception as e:
+        logger.error(f"Error in handle_add_room: {e}")
+        await state.clear()
+        await message.answer("Произошла ошибка. Пожалуйста, попробуйте позже.")
 
 @router.message(RoomState.waiting_for_name)
 async def handle_room_name(message: Message, state: FSMContext):
     """Handle room name input."""
-    if message.text == "🏠 Главное меню":
+    try:
+        if message.text == "🏠 Главное меню":
+            await state.clear()
+            await message.answer(
+                "Выберите действие:",
+                reply_markup=get_main_keyboard()
+            )
+            return
+        
+        if len(message.text) > 50:
+            await message.answer("Название помещения не должно превышать 50 символов. Пожалуйста, введите более короткое название.")
+            return
+        
+        await state.update_data(name=message.text)
+        await state.set_state(RoomState.waiting_for_length)
+        await message.answer("Введите длину помещения в метрах:")
+    except Exception as e:
+        logger.error(f"Error in handle_room_name: {e}")
         await state.clear()
-        await message.answer(
-            "Выберите действие:",
-            reply_markup=get_main_keyboard()
-        )
-        return
-    
-    await state.update_data(name=message.text)
-    await state.set_state(RoomState.waiting_for_length)
-    await message.answer("Введите длину помещения в метрах:")
+        await message.answer("Произошла ошибка. Пожалуйста, попробуйте позже.")
 
 @router.message(RoomState.waiting_for_length)
 async def handle_room_length(message: Message, state: FSMContext):
     """Handle room length input."""
     try:
         length = float(message.text.replace(',', '.'))
+        if length <= 0 or length > 100:
+            await message.answer("Длина помещения должна быть больше 0 и не превышать 100 метров. Пожалуйста, введите корректное значение.")
+            return
+            
         await state.update_data(length=length)
         await state.set_state(RoomState.waiting_for_width)
         await message.answer("Введите ширину помещения в метрах:")
     except ValueError:
-        await message.answer("Пожалуйста, введите число (например: 3.5):")
+        await message.answer("Пожалуйста, введите число (например: 3.5)")
+    except Exception as e:
+        logger.error(f"Error in handle_room_length: {e}")
+        await state.clear()
+        await message.answer("Произошла ошибка. Пожалуйста, попробуйте позже.")
 
 @router.message(RoomState.waiting_for_width)
 async def handle_room_width(message: Message, state: FSMContext):
     """Handle room width input."""
     try:
         width = float(message.text.replace(',', '.'))
+        if width <= 0 or width > 100:
+            await message.answer("Ширина помещения должна быть больше 0 и не превышать 100 метров. Пожалуйста, введите корректное значение.")
+            return
+            
         await state.update_data(width=width)
         await state.set_state(RoomState.waiting_for_height)
         await message.answer("Введите высоту помещения в метрах (стандартная высота 2.5 м):")
     except ValueError:
-        await message.answer("Пожалуйста, введите число (например: 2.5):")
+        await message.answer("Пожалуйста, введите число (например: 2.5)")
+    except Exception as e:
+        logger.error(f"Error in handle_room_width: {e}")
+        await state.clear()
+        await message.answer("Произошла ошибка. Пожалуйста, попробуйте позже.")
 
 @router.message(RoomState.waiting_for_height)
 async def handle_room_height(message: Message, state: FSMContext):
     """Handle room height input."""
     try:
         height = float(message.text.replace(',', '.'))
+        if height <= 0 or height > 10:
+            await message.answer("Высота помещения должна быть больше 0 и не превышать 10 метров. Пожалуйста, введите корректное значение.")
+            return
+            
         data = await state.get_data()
         
         # Calculate areas
@@ -248,11 +300,12 @@ async def handle_room_height(message: Message, state: FSMContext):
             floor_area=floor_area,
             created_at=datetime.now()
         )
+        
         save_room(message.from_user.id, room)
         
         await message.answer(
-            f"✅ Помещение сохранено!\n\n"
-            f"🏠 Название: {data['name']}\n"
+            f"Помещение успешно добавлено!\n\n"
+            f"🏠 {data['name']}\n"
             f"📏 Длина: {data['length']} м\n"
             f"📏 Ширина: {data['width']} м\n"
             f"📏 Высота: {height} м\n"
@@ -262,7 +315,11 @@ async def handle_room_height(message: Message, state: FSMContext):
         )
         await state.clear()
     except ValueError:
-        await message.answer("Пожалуйста, введите число (например: 2.5):")
+        await message.answer("Пожалуйста, введите число (например: 2.5)")
+    except Exception as e:
+        logger.error(f"Error in handle_room_height: {e}")
+        await state.clear()
+        await message.answer("Произошла ошибка при сохранении помещения. Пожалуйста, попробуйте позже.")
 
 @router.message(F.text == "🧮 Расчет материалов")
 async def handle_material_calculation(message: Message, state: FSMContext):
