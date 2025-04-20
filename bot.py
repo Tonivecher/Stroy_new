@@ -2,13 +2,15 @@ import asyncio
 import logging
 import signal
 import os
+import ssl
 from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.utils.token import validate_token
 from aiogram.client.default import DefaultBotProperties
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
-from aiohttp import web
+from aiohttp import web, TCPConnector
+from aiohttp.web import AppRunner, TCPSite
 
 from config.settings import BOT_TOKEN, WEBHOOK_URL, WEBHOOK_PATH
 from handlers.base import router as base_router
@@ -28,12 +30,25 @@ async def on_startup(bot: Bot):
     logging.info("Bot is starting up...")
     if IS_RAILWAY:
         logging.info("Running on Railway environment")
-        # Set webhook
-        await bot.set_webhook(
-            url=WEBHOOK_URL,
-            drop_pending_updates=True
-        )
-        logging.info("Webhook set successfully")
+        try:
+            # Set webhook with retry
+            for attempt in range(3):
+                try:
+                    await bot.set_webhook(
+                        url=WEBHOOK_URL,
+                        drop_pending_updates=True
+                    )
+                    logging.info("Webhook set successfully")
+                    break
+                except Exception as e:
+                    if attempt == 2:
+                        logging.error(f"Failed to set webhook after 3 attempts: {e}")
+                        raise
+                    logging.warning(f"Attempt {attempt + 1} failed to set webhook: {e}")
+                    await asyncio.sleep(2)
+        except Exception as e:
+            logging.error(f"Error setting webhook: {e}")
+            raise
     else:
         logging.info("Not running on Railway, exiting...")
         os._exit(0)
@@ -42,8 +57,11 @@ async def on_shutdown(bot: Bot):
     """Actions to perform on bot shutdown."""
     logging.info("Bot is shutting down...")
     if IS_RAILWAY:
-        await bot.delete_webhook()
-        logging.info("Webhook deleted")
+        try:
+            await bot.delete_webhook()
+            logging.info("Webhook deleted")
+        except Exception as e:
+            logging.error(f"Error deleting webhook: {e}")
 
 async def main():
     """Main function to start the bot."""
@@ -57,7 +75,11 @@ async def main():
         return
 
     # Initialize bot and dispatcher
-    bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+    bot = Bot(
+        token=BOT_TOKEN,
+        default=DefaultBotProperties(parse_mode=ParseMode.HTML),
+        session=TCPConnector(ssl=False)  # Отключаем SSL для Railway
+    )
     dp = Dispatcher(storage=MemoryStorage())
 
     # Register routers
@@ -78,13 +100,23 @@ async def main():
     setup_application(app, dp, bot=bot)
 
     # Start web server
-    runner = web.AppRunner(app)
+    runner = AppRunner(app)
     await runner.setup()
-    site = web.TCPSite(runner, host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))
+    site = TCPSite(
+        runner,
+        host='0.0.0.0',
+        port=int(os.environ.get('PORT', 8080)),
+        ssl_context=None  # Отключаем SSL для Railway
+    )
     await site.start()
 
     # Run forever
     await asyncio.Event().wait()
 
 if __name__ == "__main__":
-    asyncio.run(main()) 
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        logging.info("Bot stopped by user")
+    except Exception as e:
+        logging.error(f"Fatal error: {e}", exc_info=True) 

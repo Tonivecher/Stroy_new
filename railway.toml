@@ -6,4 +6,5 @@ buildCommand = "pip install -r requirements.txt"
 startCommand = "python bot.py"
 healthcheckPath = "/health"
 healthcheckTimeout = 100
-restartPolicyType = "on_failure" 
+restartPolicyType = "on_failure"
+port = 8080 
