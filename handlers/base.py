@@ -29,7 +29,7 @@ class MaterialCalculationState(StatesGroup):
 @router.message(Command("start"))
 async def handle_start(message: Message):
     try:
-        await message.answer(
+    await message.answer(
             "Добро пожаловать! Я помогу вам рассчитать смету ремонта. "
             "Выберите действие:",
             reply_markup=get_main_keyboard()
@@ -42,17 +42,17 @@ async def handle_start(message: Message):
 async def cmd_help(message: Message):
     """Handle /help command."""
     try:
-        await message.answer(
-            "🔍 <b>Как пользоваться ботом:</b>\n\n"
-            "1. Нажмите 'Рассчитать площадь'\n"
-            "2. Введите название помещения\n"
-            "3. Укажите длину помещения\n"
-            "4. Укажите ширину помещения\n"
-            "5. Получите результат расчета\n\n"
-            "Все сохраненные помещения будут доступны в разделе 'Мои помещения'.\n"
-            "Используйте кнопки меню для навигации.",
-            reply_markup=get_main_keyboard()
-        )
+    await message.answer(
+        "🔍 <b>Как пользоваться ботом:</b>\n\n"
+        "1. Нажмите 'Рассчитать площадь'\n"
+        "2. Введите название помещения\n"
+        "3. Укажите длину помещения\n"
+        "4. Укажите ширину помещения\n"
+        "5. Получите результат расчета\n\n"
+        "Все сохраненные помещения будут доступны в разделе 'Мои помещения'.\n"
+        "Используйте кнопки меню для навигации.",
+        reply_markup=get_main_keyboard()
+    )
     except Exception as e:
         logger.error(f"Error in cmd_help: {e}")
         await message.answer("Произошла ошибка. Пожалуйста, попробуйте позже.")
@@ -227,7 +227,7 @@ async def handle_room_name(message: Message, state: FSMContext):
             return
         
         await state.update_data(name=message.text)
-        await state.set_state(RoomState.waiting_for_length)
+    await state.set_state(RoomState.waiting_for_length)
         await message.answer("Введите длину помещения в метрах:")
     except Exception as e:
         logger.error(f"Error in handle_room_name: {e}")
