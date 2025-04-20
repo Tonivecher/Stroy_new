@@ -29,6 +29,7 @@ async def on_startup(bot: Bot):
     logging.info("Bot is starting up...")
     if IS_RAILWAY:
         logging.info("Running on Railway environment")
+        logging.info(f"Setting webhook to: {WEBHOOK_URL}")
         try:
             # Set webhook with retry
             for attempt in range(3):
