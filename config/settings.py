@@ -8,18 +8,18 @@ load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_IDS = [int(id) for id in os.getenv("ADMIN_IDS", "").split(",") if id]
 
+# Webhook settings
+WEBHOOK_PATH = '/webhook'
+WEBHOOK_URL = os.getenv('RAILWAY_STATIC_URL', '') + WEBHOOK_PATH
+
 # Material categories
-MATERIAL_CATEGORIES = [
-    "🏠 Стены",
-    "🏠 Пол",
-    "🏠 Потолок",
-    "🚽 Сантехника",
-    "💡 Электрика",
-    "🚪 Двери",
-    "🪟 Окна",
-    "🔨 Инструменты",
-    "📦 Прочее"
-]
+MATERIAL_CATEGORIES = {
+    'wall': 'Стены',
+    'ceiling': 'Потолок',
+    'floor': 'Пол',
+    'door': 'Двери',
+    'window': 'Окна'
+}
 
 # Work types
 WORK_TYPES = {
