@@ -107,7 +107,7 @@ def get_materials_by_category(category: str) -> Dict[str, Material]:
 
 def get_material(category: str, material_id: str) -> Material:
     """Get specific material by category and ID."""
-    return ALL_MATERIALS.get(category, {}).get(material_id)
+    return ALL_MATERIALS.get(category, {}).get(material_id) 
 
 def get_material_file_path(user_id: int) -> str:
     """Get path to user's materials file."""
