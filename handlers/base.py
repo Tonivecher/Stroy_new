@@ -539,61 +539,96 @@ async def handle_text(message: Message):
 async def handle_edit_room(message: Message, state: FSMContext):
     """Handle edit room request."""
     logger.info(f"User {message.from_user.id} requested to edit a room.")
-    from data.rooms import get_user_rooms, format_room_info
-    
-    rooms = get_user_rooms(message.from_user.id)
-    if not rooms:
+    try:
+        from data.rooms import get_user_rooms, format_room_info
+        
+        logger.info(f"Getting rooms for user {message.from_user.id}")
+        rooms = get_user_rooms(message.from_user.id)
+        logger.info(f"Found {len(rooms)} rooms for user {message.from_user.id}")
+        
+        if not rooms:
+            logger.info(f"No rooms found for user {message.from_user.id}")
+            await message.answer(
+                "У вас пока нет сохраненных помещений для редактирования.",
+                reply_markup=get_main_keyboard()
+            )
+            return
+        
+        # Create keyboard with room names
+        keyboard = [[KeyboardButton(text=room.name)] for room in rooms]
+        keyboard.append([KeyboardButton(text="🏠 Главное меню")])
+        
+        logger.info(f"Setting state to waiting_for_room_to_edit for user {message.from_user.id}")
+        await state.set_state(RoomState.waiting_for_room_to_edit)
+        logger.info(f"User {message.from_user.id} set state to waiting_for_room_to_edit.")
         await message.answer(
-            "У вас пока нет сохраненных помещений для редактирования.",
+            "Выберите помещение для редактирования:",
+            reply_markup=ReplyKeyboardMarkup(
+                keyboard=keyboard,
+                resize_keyboard=True
+            )
+        )
+    except Exception as e:
+        logger.error(f"Error in handle_edit_room: {e}", exc_info=True)
+        await message.answer(
+            "Произошла ошибка при получении списка помещений. Пожалуйста, попробуйте позже.",
             reply_markup=get_main_keyboard()
         )
-        return
-    
-    # Create keyboard with room names
-    keyboard = [[KeyboardButton(text=room.name)] for room in rooms]
-    keyboard.append([KeyboardButton(text="🏠 Главное меню")])
-    
-    await state.set_state(RoomState.waiting_for_room_to_edit)
-    logger.info(f"User {message.from_user.id} set state to waiting_for_room_to_edit.")
-    await message.answer(
-        "Выберите помещение для редактирования:",
-        reply_markup=ReplyKeyboardMarkup(
-            keyboard=keyboard,
-            resize_keyboard=True
-        )
-    )
 
 @router.message(RoomState.waiting_for_room_to_edit)
 async def handle_room_to_edit(message: Message, state: FSMContext):
     """Handle room selection for editing."""
-    logger.info(f"User {message.from_user.id} is selecting a room to edit.")
-    from data.rooms import get_user_rooms
-    
-    rooms = get_user_rooms(message.from_user.id)
-    room_name = message.text
-    selected_room = next((room for room in rooms if room.name == room_name), None)
-    if not selected_room:
+    logger.info(f"User {message.from_user.id} is selecting a room to edit. Message text: '{message.text}'")
+    try:
+        if message.text == "🏠 Главное меню":
+            logger.info(f"User {message.from_user.id} returned to main menu from room selection")
+            await state.clear()
+            await message.answer(
+                "Выберите действие:",
+                reply_markup=get_main_keyboard()
+            )
+            return
+            
+        from data.rooms import get_user_rooms
+        
+        rooms = get_user_rooms(message.from_user.id)
+        logger.info(f"Found {len(rooms)} rooms for user {message.from_user.id}")
+        
+        room_name = message.text
+        selected_room = next((room for room in rooms if room.name == room_name), None)
+        
+        if not selected_room:
+            logger.warning(f"Room '{room_name}' not found for user {message.from_user.id}")
+            await message.answer(
+                "Пожалуйста, выберите помещение из списка.",
+                reply_markup=get_main_keyboard()
+            )
+            return
+        
+        logger.info(f"User {message.from_user.id} selected room '{selected_room.name}' for editing")
+        await state.update_data(room=selected_room)
+        await state.set_state(RoomState.editing_room)
+        logger.info(f"User {message.from_user.id} set state to editing_room")
+        
         await message.answer(
-            "Пожалуйста, выберите помещение из списка.",
+            f"Вы выбрали помещение: {selected_room.name}. Что вы хотите изменить?",
+            reply_markup=ReplyKeyboardMarkup(
+                keyboard=[
+                    [KeyboardButton(text="Изменить название")],
+                    [KeyboardButton(text="Изменить размеры")],
+                    [KeyboardButton(text="Удалить помещение")],
+                    [KeyboardButton(text="🏠 Главное меню")]
+                ],
+                resize_keyboard=True
+            )
+        )
+    except Exception as e:
+        logger.error(f"Error in handle_room_to_edit: {e}", exc_info=True)
+        await state.clear()
+        await message.answer(
+            "Произошла ошибка при выборе помещения. Пожалуйста, попробуйте позже.",
             reply_markup=get_main_keyboard()
         )
-        return
-    
-    await state.update_data(room=selected_room)
-    await state.set_state(RoomState.editing_room)
-    logger.info(f"User {message.from_user.id} selected room {selected_room.name} for editing.")
-    await message.answer(
-        f"Вы выбрали помещение: {selected_room.name}. Что вы хотите изменить?",
-        reply_markup=ReplyKeyboardMarkup(
-            keyboard=[
-                [KeyboardButton(text="Изменить название")],
-                [KeyboardButton(text="Изменить размеры")],
-                [KeyboardButton(text="Удалить помещение")],
-                [KeyboardButton(text="🏠 Главное меню")]
-            ],
-            resize_keyboard=True
-        )
-    )
 
 @router.message(RoomState.editing_room)
 async def handle_editing_room(message: Message, state: FSMContext):
