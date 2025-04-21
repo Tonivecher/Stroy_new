@@ -75,16 +75,16 @@ async def main():
         return
 
     # Initialize bot and dispatcher
-        bot = Bot(
-            token=BOT_TOKEN,
-            default=DefaultBotProperties(parse_mode=ParseMode.HTML)
-        )
-        dp = Dispatcher(storage=MemoryStorage())
-        
-        # Register routers
-        dp.include_router(base_router)
-        dp.include_router(estimate_router)
-        
+    bot = Bot(
+        token=BOT_TOKEN,
+        default=DefaultBotProperties(parse_mode=ParseMode.HTML)
+    )
+    dp = Dispatcher(storage=MemoryStorage())
+
+    # Register routers
+    dp.include_router(base_router)
+    dp.include_router(estimate_router)
+
     # Register startup and shutdown handlers
     dp.startup.register(on_startup)
     dp.shutdown.register(on_shutdown)
@@ -92,10 +92,10 @@ async def main():
     if IS_RAILWAY and WEBHOOK_URL:
         # Create aiohttp application for webhook
         app = web.Application()
-        
+
         # Add health check endpoint
         app.router.add_get('/health', health_check)
-        
+
         webhook_requests_handler = SimpleRequestHandler(
             dispatcher=dp,
             bot=bot,
