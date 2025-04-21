@@ -7,11 +7,13 @@ def get_main_keyboard() -> ReplyKeyboardMarkup:
         keyboard=[
             [
                 KeyboardButton(text="🔲 Рассчитать площадь"),
-                KeyboardButton(text="🏠 Мои помещения")
+                KeyboardButton(text="🏠 Мои помещения"),
+                KeyboardButton(text="✏️ Редактировать помещение")
             ],
             [
                 KeyboardButton(text="📦 Материалы"),
-                KeyboardButton(text="🧮 Расчет материалов")
+                KeyboardButton(text="🧮 Расчет материалов"),
+                KeyboardButton(text="🏠 Главное меню")
             ],
             [
                 KeyboardButton(text="❓ Помощь")

@@ -18,6 +18,10 @@ class RoomState(StatesGroup):
     waiting_for_length = State()
     waiting_for_width = State()
     waiting_for_height = State()
+    waiting_for_room_to_edit = State()
+    editing_room = State()
+    editing_room_name = State()
+    editing_room_dimensions = State()
 
 class MaterialCalculationState(StatesGroup):
     waiting_for_room = State()
@@ -528,5 +532,131 @@ async def handle_text(message: Message):
     await message.answer(
         "Пожалуйста, используйте команды /start или /help, "
         "или выберите действие из меню.",
+        reply_markup=get_main_keyboard()
+    )
+
+@router.message(F.text == "✏️ Редактировать помещение")
+async def handle_edit_room(message: Message, state: FSMContext):
+    """Handle edit room request."""
+    from data.rooms import get_user_rooms, format_room_info
+    
+    rooms = get_user_rooms(message.from_user.id)
+    if not rooms:
+        await message.answer(
+            "У вас пока нет сохраненных помещений для редактирования.",
+            reply_markup=get_main_keyboard()
+        )
+        return
+    
+    # Create keyboard with room names
+    keyboard = [[KeyboardButton(text=room.name)] for room in rooms]
+    keyboard.append([KeyboardButton(text="🏠 Главное меню")])
+    
+    await state.set_state(RoomState.waiting_for_room_to_edit)
+    await message.answer(
+        "Выберите помещение для редактирования:",
+        reply_markup=ReplyKeyboardMarkup(
+            keyboard=keyboard,
+            resize_keyboard=True
+        )
+    )
+
+@router.message(RoomState.waiting_for_room_to_edit)
+async def handle_room_to_edit(message: Message, state: FSMContext):
+    """Handle room selection for editing."""
+    from data.rooms import get_user_rooms
+    
+    rooms = get_user_rooms(message.from_user.id)
+    room_name = message.text
+    selected_room = next((room for room in rooms if room.name == room_name), None)
+    if not selected_room:
+        await message.answer(
+            "Пожалуйста, выберите помещение из списка.",
+            reply_markup=get_main_keyboard()
+        )
+        return
+    
+    await state.update_data(room=selected_room)
+    await state.set_state(RoomState.editing_room)
+    await message.answer(
+        f"Вы выбрали помещение: {selected_room.name}. Что вы хотите изменить?",
+        reply_markup=ReplyKeyboardMarkup(
+            keyboard=[
+                [KeyboardButton(text="Изменить название")],
+                [KeyboardButton(text="Изменить размеры")],
+                [KeyboardButton(text="Удалить помещение")],
+                [KeyboardButton(text="🏠 Главное меню")]
+            ],
+            resize_keyboard=True
+        )
+    )
+
+@router.message(RoomState.editing_room)
+async def handle_editing_room(message: Message, state: FSMContext):
+    """Handle editing options for a room."""
+    data = await state.get_data()
+    room = data['room']
+    
+    if message.text == "Изменить название":
+        await state.set_state(RoomState.editing_room_name)
+        await message.answer("Введите новое название помещения:")
+    elif message.text == "Изменить размеры":
+        await state.set_state(RoomState.editing_room_dimensions)
+        await message.answer("Введите новые размеры помещения (длина, ширина, высота) через запятую:")
+    elif message.text == "Удалить помещение":
+        from data.rooms import delete_room
+        delete_room(message.from_user.id, room)
+        await state.clear()
+        await message.answer(
+            f"Помещение '{room.name}' удалено.",
+            reply_markup=get_main_keyboard()
+        )
+    elif message.text == "🏠 Главное меню":
+        await state.clear()
+        await message.answer(
+            "Выберите действие:",
+            reply_markup=get_main_keyboard()
+        )
+    else:
+        await message.answer("Пожалуйста, выберите действие из предложенных вариантов.")
+
+@router.message(RoomState.editing_room_name)
+async def handle_editing_room_name(message: Message, state: FSMContext):
+    """Handle new room name input."""
+    data = await state.get_data()
+    room = data['room']
+    new_name = message.text
+    
+    if len(new_name) > 50:
+        await message.answer("Название помещения не должно превышать 50 символов. Пожалуйста, введите более короткое название.")
+        return
+    
+    from data.rooms import update_room_name
+    update_room_name(message.from_user.id, room, new_name)
+    await state.clear()
+    await message.answer(
+        f"Название помещения изменено на '{new_name}'.",
+        reply_markup=get_main_keyboard()
+    )
+
+@router.message(RoomState.editing_room_dimensions)
+async def handle_editing_room_dimensions(message: Message, state: FSMContext):
+    """Handle new room dimensions input."""
+    data = await state.get_data()
+    room = data['room']
+    
+    try:
+        length, width, height = map(float, message.text.split(','))
+        if length <= 0 or width <= 0 or height <= 0:
+            raise ValueError
+    except ValueError:
+        await message.answer("Пожалуйста, введите корректные размеры (длина, ширина, высота) через запятую.")
+        return
+    
+    from data.rooms import update_room_dimensions
+    update_room_dimensions(message.from_user.id, room, length, width, height)
+    await state.clear()
+    await message.answer(
+        f"Размеры помещения '{room.name}' обновлены.",
         reply_markup=get_main_keyboard()
     ) 
