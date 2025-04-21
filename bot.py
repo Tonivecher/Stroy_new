@@ -14,6 +14,7 @@ from aiohttp.web import AppRunner, TCPSite
 from config.settings import BOT_TOKEN, WEBHOOK_URL, WEBHOOK_PATH
 from handlers.base import router as base_router
 from handlers.estimate import router as estimate_router
+from handlers.knowledge import router as knowledge_router
 
 # Configure logging
 logging.basicConfig(
@@ -88,6 +89,7 @@ async def main():
     # Register routers
     dp.include_router(base_router)
     dp.include_router(estimate_router)
+    dp.include_router(knowledge_router)
 
     # Register startup and shutdown handlers
     dp.startup.register(on_startup)
