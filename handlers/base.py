@@ -525,16 +525,6 @@ async def handle_calculation_surface(message: Message, state: FSMContext):
     )
     await state.clear()
 
-# Fallback handler for unrecognized text messages
-@router.message(F.text)
-async def handle_text(message: Message):
-    """Handle unrecognized text messages."""
-    await message.answer(
-        "Пожалуйста, используйте команды /start или /help, "
-        "или выберите действие из меню.",
-        reply_markup=get_main_keyboard()
-    )
-
 @router.message(F.text == "✏️ Редактировать помещение")
 async def handle_edit_room(message: Message, state: FSMContext):
     """Handle edit room request."""
@@ -706,5 +696,16 @@ async def handle_editing_room_dimensions(message: Message, state: FSMContext):
     logger.info(f"User {message.from_user.id} updated room dimensions to {length}x{width}x{height}.")
     await message.answer(
         f"Размеры помещения '{room.name}' обновлены.",
+        reply_markup=get_main_keyboard()
+    )
+
+# Fallback handler for unrecognized text messages
+@router.message(F.text)
+async def handle_text(message: Message):
+    """Handle unrecognized text messages."""
+    logger.info(f"Fallback handler called for message: '{message.text}' from user {message.from_user.id}")
+    await message.answer(
+        "Пожалуйста, используйте команды /start или /help, "
+        "или выберите действие из меню.",
         reply_markup=get_main_keyboard()
     ) 
