@@ -2,6 +2,7 @@ import asyncio
 import logging
 import signal
 import os
+import json
 from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
@@ -9,7 +10,7 @@ from aiogram.utils.token import validate_token
 from aiogram.client.default import DefaultBotProperties
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 from aiohttp import web
-from aiohttp.web import AppRunner, TCPSite
+from aiohttp.web import AppRunner, TCPSite, middleware
 
 from config.settings import BOT_TOKEN, WEBHOOK_URL, WEBHOOK_PATH
 from handlers.base import router as base_router
@@ -32,6 +33,19 @@ IS_RAILWAY = os.environ.get('RAILWAY_ENVIRONMENT') is not None
 async def health_check(request):
     """Health check endpoint for Railway."""
     return web.Response(text='OK', status=200)
+
+# Middleware для обработки ошибок JSON в запросах
+@middleware
+async def error_middleware(request, handler):
+    """Middleware для обработки ошибок в запросах."""
+    try:
+        return await handler(request)
+    except json.JSONDecodeError as e:
+        logging.error(f"JSON Decode Error: {str(e)}")
+        return web.Response(text='Invalid JSON', status=400)
+    except Exception as e:
+        logging.error(f"Webhook error: {str(e)}")
+        return web.Response(text='Internal Server Error', status=500)
 
 async def on_startup(bot: Bot):
     """Actions to perform on bot startup."""
@@ -72,6 +86,25 @@ async def on_shutdown(bot: Bot):
         except Exception as e:
             logging.error(f"Error deleting webhook: {e}")
 
+# Кастомный обработчик запросов вебхука с обработкой ошибок
+class SafeRequestHandler(SimpleRequestHandler):
+    async def handle(self, request: web.Request) -> web.Response:
+        """
+        Handler for webhook requests with error handling.
+        """
+        try:
+            if request.content_length:
+                try:
+                    webhook_data = await request.json()
+                    return await self.process_webhook_update(webhook_data)
+                except json.JSONDecodeError as e:
+                    logging.error(f"JSON Decode Error in webhook request: {str(e)}")
+                    return web.Response(text="Invalid JSON data", status=400)
+            return web.Response(text="No data provided", status=400)
+        except Exception as e:
+            logging.error(f"Error processing webhook: {str(e)}")
+            return web.Response(text="Internal server error", status=500)
+
 async def main():
     """Main function to start the bot."""
     # Validate token
@@ -97,12 +130,13 @@ async def main():
 
     if IS_RAILWAY and WEBHOOK_URL:
         # Create aiohttp application for webhook
-        app = web.Application()
+        app = web.Application(middlewares=[error_middleware])
 
         # Add health check endpoint
         app.router.add_get('/health', health_check)
 
-        webhook_requests_handler = SimpleRequestHandler(
+        # Используем кастомный обработчик webhook с обработкой ошибок
+        webhook_requests_handler = SafeRequestHandler(
             dispatcher=dp,
             bot=bot,
         )

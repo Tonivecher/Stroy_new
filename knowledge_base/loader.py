@@ -35,8 +35,12 @@ class KnowledgeLoader:
         Returns:
             Список названий категорий.
         """
-        return [d.name for d in self.base_path.iterdir() 
-                if d.is_dir() and not d.name.startswith('__')]
+        try:
+            return [d.name for d in self.base_path.iterdir() 
+                   if d.is_dir() and not d.name.startswith('__')]
+        except Exception as e:
+            logger.error(f"Ошибка при получении списка категорий: {e}")
+            return []
     
     def load_category(self, category: str) -> Dict[str, Any]:
         """
@@ -62,10 +66,21 @@ class KnowledgeLoader:
         # Загрузка всех JSON файлов в категории
         for file_path in category_path.glob('*.json'):
             try:
+                if file_path.stat().st_size == 0:
+                    logger.error(f"Файл {file_path} пуст.")
+                    continue
+                    
                 with open(file_path, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
+                    content = f.read()
+                    if not content.strip():
+                        logger.error(f"Файл {file_path} содержит только пробельные символы.")
+                        continue
+                        
+                    data = json.loads(content)
                     result[file_path.stem] = data
                     logger.debug(f"Загружен файл: {file_path}")
+            except json.JSONDecodeError as e:
+                logger.error(f"Ошибка формата JSON в файле {file_path}: {e}")
             except Exception as e:
                 logger.error(f"Ошибка при загрузке файла {file_path}: {e}")
         
@@ -89,8 +104,20 @@ class KnowledgeLoader:
             return None
         
         try:
+            if file_path.stat().st_size == 0:
+                logger.error(f"Файл {file_path} пуст.")
+                return None
+                
             with open(file_path, 'r', encoding='utf-8') as f:
-                return json.load(f)
+                content = f.read()
+                if not content.strip():
+                    logger.error(f"Файл {file_path} содержит только пробельные символы.")
+                    return None
+                    
+                return json.loads(content)
+        except json.JSONDecodeError as e:
+            logger.error(f"Ошибка формата JSON в файле {file_path}: {e}")
+            raise
         except Exception as e:
             logger.error(f"Ошибка при загрузке элемента {item_id}: {e}")
             return None
@@ -115,10 +142,21 @@ class KnowledgeLoader:
         file_path = category_path / f"{item_id}.json"
         
         try:
+            # Проверка данных перед сохранением
+            if not data:
+                logger.error(f"Попытка сохранить пустые данные для элемента {item_id}")
+                return False
+                
+            # Проверяем, можно ли сериализовать данные в JSON
+            json_data = json.dumps(data, ensure_ascii=False, indent=2)
+            
             with open(file_path, 'w', encoding='utf-8') as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
+                f.write(json_data)
             logger.info(f"Элемент '{item_id}' успешно сохранен в категории '{category}'")
             return True
+        except TypeError as e:
+            logger.error(f"Ошибка сериализации данных для элемента {item_id}: {e}")
+            return False
         except Exception as e:
             logger.error(f"Ошибка при сохранении элемента {item_id}: {e}")
             return False 
