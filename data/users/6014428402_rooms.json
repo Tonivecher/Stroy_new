@@ -52,5 +52,23 @@
     "area": 63.0,
     "floor_area": 15.0,
     "created_at": "2025-04-20T02:30:27.674094"
+  },
+  {
+    "name": "Ракид",
+    "length": 6.0,
+    "width": 4.0,
+    "height": 3.0,
+    "area": 84.0,
+    "floor_area": 24.0,
+    "created_at": "2025-04-21T08:19:29.390175"
+  },
+  {
+    "name": "Золт",
+    "length": 7.0,
+    "width": 7.0,
+    "height": 3.0,
+    "area": 133.0,
+    "floor_area": 49.0,
+    "created_at": "2025-04-21T08:24:33.913616"
   }
 ]
