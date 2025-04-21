@@ -109,4 +109,85 @@ def format_room_info(room: Room) -> str:
         )
     except Exception as e:
         logger.error(f"Error formatting room info: {e}")
-        return "Ошибка при форматировании информации о помещении" 
+        return "Ошибка при форматировании информации о помещении"
+
+def update_room_name(user_id: int, room: Room, new_name: str) -> None:
+    """Update the name of a room."""
+    try:
+        filename = get_rooms_file(user_id)
+        rooms = get_user_rooms(user_id)
+        
+        # Find the room with the same name and update it
+        for i, r in enumerate(rooms):
+            if r.name == room.name:
+                rooms[i].name = new_name
+                break
+        
+        # Save updated rooms list
+        with open(filename, 'w', encoding='utf-8') as f:
+            json.dump(
+                [r.to_dict() for r in rooms],
+                f,
+                ensure_ascii=False,
+                indent=2
+            )
+        logger.info(f"Room name updated for user {user_id}: {room.name} -> {new_name}")
+    except Exception as e:
+        logger.error(f"Error updating room name: {e}")
+        raise
+
+def update_room_dimensions(user_id: int, room: Room, length: float, width: float, height: float) -> None:
+    """Update the dimensions of a room."""
+    try:
+        filename = get_rooms_file(user_id)
+        rooms = get_user_rooms(user_id)
+        
+        # Find the room with the same name and update its dimensions
+        for i, r in enumerate(rooms):
+            if r.name == room.name:
+                # Calculate new areas
+                total_area = 2 * (length + width) * height + 2 * (length * width)
+                floor_area = length * width
+                
+                # Update room properties
+                rooms[i].length = length
+                rooms[i].width = width
+                rooms[i].height = height
+                rooms[i].area = total_area
+                rooms[i].floor_area = floor_area
+                break
+        
+        # Save updated rooms list
+        with open(filename, 'w', encoding='utf-8') as f:
+            json.dump(
+                [r.to_dict() for r in rooms],
+                f,
+                ensure_ascii=False,
+                indent=2
+            )
+        logger.info(f"Room dimensions updated for user {user_id}, room: {room.name}")
+    except Exception as e:
+        logger.error(f"Error updating room dimensions: {e}")
+        raise
+
+def delete_room(user_id: int, room: Room) -> None:
+    """Delete a room from user's rooms list."""
+    try:
+        filename = get_rooms_file(user_id)
+        rooms = get_user_rooms(user_id)
+        
+        # Remove room with the same name
+        rooms = [r for r in rooms if r.name != room.name]
+        
+        # Save updated rooms list
+        with open(filename, 'w', encoding='utf-8') as f:
+            json.dump(
+                [r.to_dict() for r in rooms],
+                f,
+                ensure_ascii=False,
+                indent=2
+            )
+        logger.info(f"Room deleted for user {user_id}: {room.name}")
+    except Exception as e:
+        logger.error(f"Error deleting room: {e}")
+        raise 
