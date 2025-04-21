@@ -39,7 +39,10 @@ Thumbs.db
 
 # Logs
 *.log
-logs/
+# Кроме директории logs
+!logs/
+# Но игнорировать файл логов
+logs/bot.log
 
 # Replit
 .replit
