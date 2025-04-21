@@ -464,8 +464,7 @@ async def handle_calculation_material(message: Message, state: FSMContext):
     # Create keyboard with surface types
     keyboard = ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text="🧱 Стены")],
-            [KeyboardButton(text="⬜ Пол")],
+            [KeyboardButton(text="🧱 Стены"), KeyboardButton(text="⬜ Пол")],
             [KeyboardButton(text="🏠 Главное меню")]
         ],
         resize_keyboard=True
@@ -604,9 +603,11 @@ async def handle_room_to_edit(message: Message, state: FSMContext):
             f"Вы выбрали помещение: {selected_room.name}. Что вы хотите изменить?",
             reply_markup=ReplyKeyboardMarkup(
                 keyboard=[
-                    [KeyboardButton(text="Изменить название")],
-                    [KeyboardButton(text="Изменить размеры")],
-                    [KeyboardButton(text="Удалить помещение")],
+                    [
+                        KeyboardButton(text="Изменить название"),
+                        KeyboardButton(text="Изменить размеры"),
+                        KeyboardButton(text="Удалить помещение")
+                    ],
                     [KeyboardButton(text="🏠 Главное меню")]
                 ],
                 resize_keyboard=True

@@ -70,9 +70,16 @@ def get_material_units() -> ReplyKeyboardMarkup:
 def get_material_categories_keyboard() -> ReplyKeyboardMarkup:
     """Create keyboard with material categories."""
     keyboard = []
+    row = []
     
-    for value in MATERIAL_CATEGORIES.values():
-        keyboard.append([KeyboardButton(text=value)])
+    # Добавляем по 2 категории в строку
+    for i, value in enumerate(MATERIAL_CATEGORIES.values()):
+        row.append(KeyboardButton(text=value))
+        
+        # После каждых 2 кнопок или если это последняя кнопка, добавляем строку
+        if len(row) == 2 or i == len(MATERIAL_CATEGORIES) - 1:
+            keyboard.append(row)
+            row = []
     
     keyboard.append([KeyboardButton(text="🏠 Главное меню")])
     
@@ -85,12 +92,18 @@ def get_materials_keyboard(category: str) -> ReplyKeyboardMarkup:
     """Create keyboard with materials for specific category."""
     materials = get_materials_by_category(category)
     keyboard = []
+    row = []
     
-    for material in materials.values():
-        keyboard.append([KeyboardButton(text=material.name)])
+    # Добавляем по 2 материала в строку
+    for i, material in enumerate(materials.values()):
+        row.append(KeyboardButton(text=material.name))
+        
+        # После каждых 2 кнопок или если это последняя кнопка, добавляем строку
+        if len(row) == 2 or i == len(materials) - 1:
+            keyboard.append(row)
+            row = []
     
-    keyboard.append([KeyboardButton(text="⬅️ Назад")])
-    keyboard.append([KeyboardButton(text="🏠 Главное меню")])
+    keyboard.append([KeyboardButton(text="⬅️ Назад"), KeyboardButton(text="🏠 Главное меню")])
     
     return ReplyKeyboardMarkup(
         keyboard=keyboard,
